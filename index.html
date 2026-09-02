@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quixant IQON-3 vs QXi-7000 Lite — Benchmark Comparison</title>
+<style>
+  .viz-root{
+    color-scheme: light;
+    --surface-1:      #fcfcfb;
+    --page:           #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --grid:           #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --good:           #0ca30c;
+    --warning:        #fab219;
+    --critical:       #d03b3b;
+    --new:            #2a78d6; /* categorical slot 1 */
+    --old:            #eb6834; /* categorical slot 6 */
+    --new-soft:       #cde2fb;
+    --old-soft:       #fbdccb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .viz-root{
+      color-scheme: dark;
+      --surface-1:      #1a1a19;
+      --page:           #0d0d0d;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --grid:           #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,0.10);
+      --good:           #0ca30c;
+      --warning:        #fab219;
+      --critical:       #e66767;
+      --new:            #3987e5;
+      --old:            #d95926;
+      --new-soft:       #184f95;
+      --old-soft:       #5a2d13;
+    }
+  }
+  :root[data-theme="dark"] .viz-root{
+    color-scheme: dark;
+    --surface-1:      #1a1a19;
+    --page:           #0d0d0d;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --grid:           #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.10);
+    --good:           #0ca30c;
+    --warning:        #fab219;
+    --critical:       #e66767;
+    --new:            #3987e5;
+    --old:            #d95926;
+    --new-soft:       #184f95;
+    --old-soft:       #5a2d13;
+  }
+
+  .viz-root{
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--page);
+    color: var(--text-primary);
+    padding: 28px 20px 60px;
+  }
+  .wrap{ max-width: 980px; margin: 0 auto; }
+  h1{ font-size: 22px; margin: 0 0 4px; }
+  .subtitle{ color: var(--text-secondary); font-size: 14px; margin: 0 0 20px; }
+
+  .callout{
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--warning);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 24px;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+  }
+  .callout b{ color: var(--text-primary); }
+
+  .legend{ display:flex; gap:18px; align-items:center; margin: 0 0 18px; font-size: 13px; color: var(--text-secondary); }
+  .legend .item{ display:flex; align-items:center; gap:6px; }
+  .swatch{ width:10px; height:10px; border-radius:2px; display:inline-block; }
+
+  .card{
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 20px;
+  }
+  .card h2{ font-size: 14px; margin: 0 0 2px; color: var(--text-primary); }
+  .card .note{ font-size: 12px; color: var(--text-muted); margin: 0 0 16px; }
+
+  /* stat tiles */
+  .tiles{ display:grid; grid-template-columns: repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:20px; }
+  .tile{ background: var(--surface-1); border:1px solid var(--border); border-radius:10px; padding:14px 16px; }
+  .tile .label{ font-size:11.5px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em; }
+  .tile .value{ font-size:26px; font-weight:600; margin-top:4px; }
+  .tile .delta{ font-size:12px; margin-top:2px; }
+  .tile .delta.good{ color: var(--good); }
+  .tile .delta.bad{ color: var(--critical); }
+  .tile .delta.flat{ color: var(--text-muted); }
+
+  /* grouped bar rows */
+  .row{ display:grid; grid-template-columns: 130px 1fr 46px; align-items:center; gap:10px; margin: 10px 0; }
+  .row .rlabel{ font-size:12.5px; color: var(--text-secondary); }
+  .bars{ display:flex; flex-direction:column; gap:3px; }
+  .barline{ display:flex; align-items:center; gap:8px; }
+  .barline .track{ flex:1; height:9px; background: var(--grid); border-radius: 4px; overflow:hidden; position:relative; }
+  .barline .fill{ height:100%; border-radius:4px; }
+  .row .rval{ font-size:12px; color:var(--text-secondary); text-align:right; font-variant-numeric: tabular-nums; }
+
+  table{ width:100%; border-collapse: collapse; font-size: 13px; }
+  th, td{ text-align:left; padding: 8px 10px; border-bottom: 1px solid var(--grid); }
+  th{ color: var(--text-muted); font-weight:500; font-size: 11.5px; text-transform:uppercase; letter-spacing:.03em; }
+  td.num{ text-align:right; font-variant-numeric: tabular-nums; }
+  td.hl{ color: var(--text-primary); font-weight:600; }
+
+  .foot{ font-size:12px; color: var(--text-muted); line-height:1.7; }
+  .foot ul{ margin:6px 0 0; padding-left:18px; }
+</style>
+</head>
+<body>
+
+<div class="viz-root">
+  <div class="wrap">
+    <h1>Quixant IQON-3 vs QXi-7000 Lite — Benchmark Comparison</h1>
+    <p class="subtitle">Same 500 GB 2.5&quot; SATA SSD (OS image) swapped between chassis for an apples-to-apples platform comparison &middot; captured 2026-09-01/02</p>
+
+    <div class="callout">
+      <b>Open item — GPU driver on IQON-3 not confirmed.</b> The old QXi-7000 Lite is confirmed running its AMD Radeon Vega 11 driver.
+      The IQON-3's video driver could not be determined this round. Its integrated GPU is presumably the Radeon&nbsp;760M bundled with the
+      Ryzen&nbsp;5&nbsp;PRO&nbsp;8640U, but that's inferred from the CPU model, not confirmed installed. This matters because the IQON-3's
+      WinSAT <b>Graphics</b> subscore (7.3) came in <i>lower</i> than the old unit's (8.0) and is the sole bottleneck dragging its overall
+      WinSPR score below the old machine's — the opposite of what the CPU/memory throughput numbers below would predict. Worth re-checking
+      Device Manager for a generic/basic display adapter and re-running <code>winsat formal</code> once the proper driver is confirmed.
+    </div>
+
+    <div class="legend">
+      <span class="item"><span class="swatch" style="background:var(--new)"></span>IQON-3 (new)</span>
+      <span class="item"><span class="swatch" style="background:var(--old)"></span>QXi-7000 Lite (old)</span>
+    </div>
+
+    <!-- Headline tiles -->
+    <div class="tiles">
+      <div class="tile">
+        <div class="label">WinSPR (overall)</div>
+        <div class="value">7.3</div>
+        <div class="delta bad">vs 8.0 old &middot; −0.7</div>
+      </div>
+      <div class="tile">
+        <div class="label">CPU throughput (AES-256)</div>
+        <div class="value">12.8 GB/s</div>
+        <div class="delta good">vs 6.4 GB/s old &middot; +99%</div>
+      </div>
+      <div class="tile">
+        <div class="label">Memory throughput</div>
+        <div class="value">55.7 GB/s</div>
+        <div class="delta good">vs 25.9 GB/s old &middot; +115%</div>
+      </div>
+      <div class="tile">
+        <div class="label">Disk max latency</div>
+        <div class="value">1.3 ms</div>
+        <div class="delta good">vs 16.2 ms old</div>
+      </div>
+    </div>
+
+    <!-- System config -->
+    <div class="card">
+      <h2>System configuration</h2>
+      <p class="note">As captured by CIM/WMI on each unit</p>
+      <table>
+        <thead><tr><th></th><th>IQON-3 (new)</th><th>QXi-7000 Lite (old)</th></tr></thead>
+        <tbody>
+          <tr><td>Model</td><td class="hl">Quixant IQON-3</td><td class="hl">Quixant QXi-7000 Lite</td></tr>
+          <tr><td>CPU</td><td>AMD Ryzen 5 PRO 8640U (6C/12T, 3.5 GHz)</td><td>AMD Ryzen Embedded V1807B (4C/8T, 3.35 GHz)</td></tr>
+          <tr><td>GPU</td><td>Radeon 760M (iGPU, inferred — driver unconfirmed)</td><td>Radeon Vega 11 (confirmed)</td></tr>
+          <tr><td>RAM</td><td>11.8 GB</td><td>14.9 GB</td></tr>
+          <tr><td>Boot/test drive</td><td>500 GB SATA SSD (shared unit)</td><td>500 GB SATA SSD (shared unit)</td></tr>
+          <tr><td>Other storage present</td><td>128 GB PCIe NVMe (onboard, not yet OS-tested)</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- WinSAT formal subscores -->
+    <div class="card">
+      <h2>WinSAT formal subscores</h2>
+      <p class="note">0–9.9 scale &middot; compressed near the ceiling, so read alongside raw throughput below &middot; D3D detail sub-tests report a hardcoded 42.00 F/s on modern Windows and aren't informative on their own</p>
+      <div id="scoreRows"></div>
+    </div>
+
+    <!-- Raw CPU throughput -->
+    <div class="card">
+      <h2>CPU throughput (formal assessment, multi-thread)</h2>
+      <p class="note">MB/s, higher is better</p>
+      <div id="cpuRows"></div>
+    </div>
+
+    <!-- Memory + video memory throughput -->
+    <div class="card">
+      <h2>Memory throughput</h2>
+      <p class="note">MB/s, higher is better</p>
+      <div id="memRows"></div>
+    </div>
+
+    <!-- Disk -->
+    <div class="card">
+      <h2>Storage — <code>winsat disk -drive C</code></h2>
+      <p class="note">Same physical SSD in both runs, so this isolates the platform's storage controller/path &middot; MB/s higher is better, latency lower is better</p>
+      <div id="diskRows"></div>
+    </div>
+
+    <!-- Boot -->
+    <div class="card">
+      <h2>Boot time</h2>
+      <p class="note">Most recent Diagnostics-Performance event 100 per unit, ms &middot; because the SSD's event log is shared across both chassis, only the newest entry per folder is guaranteed to belong to that specific unit</p>
+      <div id="bootRows"></div>
+    </div>
+
+    <div class="card foot">
+      <b>Data-quality notes</b>
+      <ul>
+        <li>Both <code>boot-times.csv</code> files pull from the same OS install's event log (moved between chassis), so older rows overlap between the two folders — only the top row of each is trusted as unit-specific here.</li>
+        <li>WinSAT's per-effect Direct3D numbers (Batch/Alpha/ALU/Tex/Geometry/CBuffer) are fixed at 42.00 F/s on Windows 10/11 — a known platform quirk, not a real measurement — so the D3DScore (9.9/9.9) shouldn't be read as a real graphics differentiator.</li>
+        <li>Per the recording plan, an IQON-3 + NVMe pass (native 128 GB PCIe drive) is still outstanding to complete the three-way comparison.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+  const NEW = 'var(--new)', OLD = 'var(--old)';
+
+  function renderGroup(containerId, rows) {
+    // rows: [{label, newVal, oldVal, max, fmt}]
+    const el = document.getElementById(containerId);
+    el.innerHTML = rows.map(r => {
+      const fmt = r.fmt || (v => v);
+      const nPct = Math.max(2, (r.newVal / r.max) * 100);
+      const oPct = Math.max(2, (r.oldVal / r.max) * 100);
+      return `
+        <div class="row">
+          <div class="rlabel">${r.label}</div>
+          <div class="bars">
+            <div class="barline"><div class="track"><div class="fill" style="width:${nPct}%;background:${NEW}"></div></div></div>
+            <div class="barline"><div class="track"><div class="fill" style="width:${oPct}%;background:${OLD}"></div></div></div>
+          </div>
+          <div class="bars">
+            <div class="rval">${fmt(r.newVal)}</div>
+            <div class="rval">${fmt(r.oldVal)}</div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  renderGroup('scoreRows', [
+    { label:'CPU score',      newVal:9.3, oldVal:9.1, max:10 },
+    { label:'Memory score',   newVal:9.3, oldVal:9.1, max:10 },
+    { label:'Graphics score', newVal:7.3, oldVal:8.0, max:10 },
+    { label:'D3D score',      newVal:9.9, oldVal:9.9, max:10 },
+    { label:'Disk score',     newVal:8.2, oldVal:8.1, max:10 },
+    { label:'WinSPR (min)',   newVal:7.3, oldVal:8.0, max:10 },
+  ]);
+
+  renderGroup('cpuRows', [
+    { label:'AES-256 encrypt', newVal:12785.72, oldVal:6419.46, max:13000, fmt:v=>v.toFixed(0) },
+    { label:'SHA-1 hash',      newVal:7180.57,  oldVal:3007.37, max:13000, fmt:v=>v.toFixed(0) },
+    { label:'Vista compress',  newVal:2721.25,  oldVal:1228.57, max:13000, fmt:v=>v.toFixed(0) },
+    { label:'LZW compress',    newVal:1062.11,  oldVal:513.44,  max:13000, fmt:v=>v.toFixed(0) },
+  ]);
+
+  renderGroup('memRows', [
+    { label:'System memory',   newVal:55665.85, oldVal:25914.87, max:56000, fmt:v=>v.toFixed(0) },
+    { label:'Video memory',    newVal:9529.87,  oldVal:12744.40, max:13000, fmt:v=>v.toFixed(0) },
+  ]);
+
+  renderGroup('diskRows', [
+    { label:'Random 16 read',       newVal:505.43, oldVal:372.58, max:540, fmt:v=>v.toFixed(0)+' MB/s' },
+    { label:'Sequential 64 read',   newVal:535.75, oldVal:490.65, max:540, fmt:v=>v.toFixed(0)+' MB/s' },
+    { label:'Sequential 64 write',  newVal:481.77, oldVal:454.47, max:540, fmt:v=>v.toFixed(0)+' MB/s' },
+    { label:'95th %ile latency',    newVal:0.532,  oldVal:0.521,  max:17,  fmt:v=>v.toFixed(3)+' ms' },
+    { label:'Max latency',          newVal:1.283,  oldVal:16.208, max:17,  fmt:v=>v.toFixed(3)+' ms' },
+  ]);
+
+  renderGroup('bootRows', [
+    { label:'Total boot time',   newVal:15493, oldVal:12116, max:16000, fmt:v=>v.toFixed(0)+' ms' },
+    { label:'Main path boot',    newVal:26,    oldVal:65,    max:70,    fmt:v=>v.toFixed(0)+' ms' },
+    { label:'Post-boot',         newVal:164,   oldVal:253,   max:260,   fmt:v=>v.toFixed(0)+' ms' },
+  ]);
+</script>
+
+</body>
+</html>
